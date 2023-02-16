@@ -1,1 +1,2 @@
+// Having a dictionary as the result allows exporting multiple values
 { dist1: normal($x, 1), dist2: 2 to 10 }

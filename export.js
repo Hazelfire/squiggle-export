@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* A script built for Joel for exporting / running simulations */
 
-// node export.js [input filename] [output filename] [params file]
+// ./export.js [input filename] [output filename] [params file]
 // Default input filename is my_model.squiggle and default output filename is output.json
 
 // Imports
@@ -27,26 +27,42 @@ async function getParams() {
 }
 
 // The amount of samples to calculate with
-const sampleCount = defaultEnvironment.sampleCount;
+// Change this to change the amount of samples.
+const sampleCount = defaultEnvironment.sampleCount; // default is 10,000
 
 // The environment. Allows you to modify how many samples
 const options = {
   sampleCount: sampleCount,
+  // This paramater is the amount of points to use in pointset dists
   xyPointLength: defaultEnvironment.xyPointLength,
 };
 
 // Main function, runs the squiggle code and writes output
 async function main() {
+  // Read input code file
   const contents = await fs.promises.readFile(INPUT_FILENAME);
   const code = contents.toString();
+
+  // Create Squiggle project
   const project = SqProject.create();
   project.setEnvironment(options);
+
+  // create a source named "main" that has the code in it
   project.setSource("main", code);
+
+  // Create an includes source, which contains the parameters
   project.setSource("include", jsImportsToSquiggleCode(await getParams()));
+
+  // Allow main to access variabled declared in parameters
   project.setContinues("main", ["include"]);
+
+  // Run all code
   project.runAll("main");
+
+  // Get result of squiggle execution
   const result = project.getResult("main");
   if (result.ok) {
+    // Convert value into JSON and save
     const value = squiggleValueToJson(result.value);
     await fs.promises.writeFile(OUTPUT_FILENAME, JSON.stringify(value));
   } else {
@@ -59,7 +75,9 @@ main();
 ///////////////////////////////////////////////////////////////////////////
 //                           Utility functions                           //
 ///////////////////////////////////////////////////////////////////////////
-//
+
+// Convert a returned squiggle file into a JavaScript object that can be saved
+// to a file
 function squiggleValueToJson(value) {
   if (value.tag === "Dist") {
     return { samples: value.value._value.sampleN(sampleCount) };
@@ -119,6 +137,11 @@ function jsImportsValueToSquiggleCode(v) {
   }
 }
 
+// Convert a json object into squiggle code that is used as parameters
+// In the past, Squiggle had in-built import functionality, but that was removed
+// in a refactor. I believe we will be adding this back in the near future.
+// But for now, this is the hacky code that just generates squiggle source code
+// that is used as parameters.
 function jsImportsToSquiggleCode(v) {
   var validId = new RegExp("[a-zA-Z][[a-zA-Z0-9]*");
   var result = Object.entries(v)

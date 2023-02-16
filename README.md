@@ -19,9 +19,39 @@ give you a good headstart!
 The `export.js` script is standalone, so you should be able to copy this to any
 repo (and rename it what you wish). As long as you have squiggle in the environment:
 
-You can specify arbitrary outputs (like Records, arrays, numbers, string etc)
-as well as arbitrary parameters. You cannot have distributions as inputs.
+```bash
+npm install @quri/squiggle-lang
+```
+
+Paramaters are a json file, see an example in parameters.json. This file
+will be an object with keys:
+
+```json
+{
+  "x": 3,
+  "y": [1, 2, 3],
+  "z": { "x": 2 }
+}
+```
+
+These keys will show up as parameters that you can use in your own models:
 
 ```
-npm install @quri/squiggle-lang
+normal($x, $z.x) // same as normal(3, 2)
+```
+
+When run, this will create a distribution. However, you can also export lists,
+numbers, strings, dictionaries etc to the output. This makes it easy to export
+multiple distributions:
+
+```
+{ dist1: normal(3, 2), moreDists: [normal(5, 3), 2 to 10], method: "OLS", pValue: 0.001}
+```
+
+This will export a JSON file in that shape.
+
+Distribution objects are sampled and returns an object like this:
+
+```
+{ "samples": [ ... list of numbers which represent samples ... ] }
 ```
